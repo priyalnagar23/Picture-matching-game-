@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Picture Match Adventure</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            color: #38205c;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 25px 15px;
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 8px 25px #0002;
+        }
+
+        h1 {
+            color: #7138c8;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .preview {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 25px 0;
+        }
+
+        .preview span {
+            padding: 12px;
+            border-radius: 15px;
+            background: #f0e7ff;
+            font-size: 35px;
+        }
+
+        .action {
+            border: none;
+            border-radius: 25px;
+            padding: 12px 22px;
+            margin: 7px;
+            background: #7138c8;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .action:hover {
+            background: #5125a0;
+        }
+
+        .difficulty {
+            padding: 10px;
+            margin: 5px;
+            border: 2px solid #d8c5f5;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .difficulty.active {
+            background: #7138c8;
+            color: white;
+        }
+
+        .info {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat {
+            min-width: 100px;
+            padding: 12px;
+            background: #f5efff;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        #game {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(45px, 75px));
+            gap: 9px;
+            justify-content: center;
+            margin: 25px auto;
+        }
+
+        .card {
+            width: 100%;
+            height: 70px;
+            border: none;
+            border-radius: 12px;
+            background: #7957d5;
+            color: white;
+            font-size: 29px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px #bbb;
+        }
+
+        .card.open {
+            background: #ffe5f1;
+            border: 2px solid #7957d5;
+        }
+
+        .card.matched {
+            background: #b8f3d0;
+            cursor: default;
+        }
+
+        #message {
+            min-height: 30px;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 400px) {
+            #game {
+                grid-template-columns: repeat(4, minmax(42px, 60px));
+                gap: 6px;
+            }
+
+            .card {
+                height: 58px;
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body> <!-- START SCREEN -->
+    <div class="container" id="startScreen">
+        <h1>🎮 Picture Match Adventure</h1>
+        <p class="subtitle"> Find Two Matching Pictures! </p>
+        <div class="preview"> <span>🍎</span> <span>🐱</span> <span>⭐</span> <span>🍓</span> <span>🚗</span>
+            <span>🦋</span> </div>
+        <h3>Choose Difficulty</h3> <button class="difficulty active" data-mode="easy" onclick="selectMode('easy')"> 🟢
+            Easy </button> <button class="difficulty" data-mode="medium" onclick="selectMode('medium')"> 🟡 Medium
+        </button> <button class="difficulty" data-mode="hard" onclick="selectMode('hard')"> 🔴 Hard </button>
+        <p id="modeInfo"> Easy: 60 seconds per level </p> <button class="action" onclick="playGame()"> ▶ PLAY NOW
+        </button>
+        <p>🧠 Test Your Memory!</p>
+        <p>🏆 Match pictures and earn points!</p>
+    </div> <!-- GAME SCREEN -->
+    <div class="container hidden" id="gameScreen">
+        <h1>🧩 Picture Match</h1>
+        <div class="info">
+            <div class="stat"> Level<br> <span id="level">1</span> </div>
+            <div class="stat"> Score<br> <span id="score">0</span> </div>
+            <div class="stat"> Time Left<br> <span id="timer">60</span> sec </div>
+            <div class="stat"> Pairs<br> <span id="pairs">0 / 4</span> </div>
+        </div>
+        <div id="game"></div>
+        <p id="message">Find two matching pictures!</p> <button class="action" onclick="restartGame()"> ↻ Restart
+        </button> <button class="action" onclick="backToHome()"> 🏠 Home </button>
+    </div>
+    <script> const pictures = ["🍎", "🐱", "🚗", "⭐", "🍓", "🐶", "⚽", "🌈", "🐼", "🍋", "🦋", "🎈", "🍉", "🐸", "🌻", "🐰", "🍇", "🎁", "🐢", "🍒", "🦊", "🍍", "🐳", "🎸", "🌙", "🐨", "🥝", "🦁", "🌺", "🚀"]; const modes = {easy: {time: 60, startPairs: 4, maxPairs: 8}, medium: {time: 45, startPairs: 6, maxPairs: 12}, hard: {time: 30, startPairs: 8, maxPairs: 15}}; let mode = "easy"; let level = 1; let score = 0; let timeLeft = 60; let timerId = null; let cards = []; let selected = []; let matchedPairs = 0; let locked = false; let gameOver = false; let roundId = 0; function shuffle(array) {for (let i = array.length - 1; i > 0; i--) {const j = Math.floor(Math.random() * (i + 1));[array[i], array[j]] = [array[j], array[i]];} return array;} function selectMode(newMode) {mode = newMode; document.querySelectorAll(".difficulty").forEach(button => {button.classList.toggle("active", button.dataset.mode === mode);}); const descriptions = {easy: "Easy: 60 seconds per level", medium: "Medium: 45 seconds per level", hard: "Hard: 30 seconds per level"}; document.getElementById("modeInfo").textContent = descriptions[mode];} function playGame() {document.getElementById("startScreen").classList.add("hidden"); document.getElementById("gameScreen").classList.remove("hidden"); level = 1; score = 0; startLevel();} function startLevel() {clearInterval(timerId); roundId++; selected = []; matchedPairs = 0; locked = false; gameOver = false; const settings = modes[mode]; const pairCount = Math.min(settings.startPairs + level - 1, settings.maxPairs, pictures.length); const chosen = shuffle([...pictures]).slice(0, pairCount); cards = shuffle([...chosen, ...chosen]); document.getElementById("level").textContent = level; document.getElementById("score").textContent = score; document.getElementById("pairs").textContent = "0 / " + pairCount; document.getElementById("message").textContent = "Find two matching pictures!"; const game = document.getElementById("game"); game.innerHTML = ""; game.style.gridTemplateColumns = "repeat(" + Math.min(6, Math.ceil(Math.sqrt(cards.length))) + ", minmax(40px, 75px))"; cards.forEach((picture, index) => {const card = document.createElement("button"); card.className = "card"; card.textContent = "❓"; card.setAttribute("aria-label", "Hidden picture"); card.onclick = function () {chooseCard(index, card);}; game.appendChild(card);}); timeLeft = settings.time; updateTimer(); const thisRound = roundId; timerId = setInterval(function () {if (thisRound !== roundId || gameOver) {return;} timeLeft--; updateTimer(); if (timeLeft <= 0) {endGame();} }, 1000);} function updateTimer() {document.getElementById("timer").textContent = timeLeft;} function chooseCard(index, card) {if (locked || gameOver) {return;} if (card.classList.contains("matched")) {return;} if (selected.some(item => item.index === index)) {return;} card.textContent = cards[index]; card.classList.add("open"); selected.push({index: index, element: card}); if (selected.length !== 2) {return;} locked = true; const first = selected[0]; const second = selected[1]; if (cards[first.index] === cards[second.index]) {first.element.classList.add("matched"); second.element.classList.add("matched"); matchedPairs++; score += 10; document.getElementById("score").textContent = score; document.getElementById("pairs").textContent = matchedPairs + " / " + (cards.length / 2); document.getElementById("message").textContent = "Correct Match! +10 Points 🎉"; selected = []; locked = false; if (matchedPairs === cards.length / 2) {clearInterval(timerId); gameOver = true; document.getElementById("message").textContent = "🏆 Level " + level + " Completed!"; locked = true; const completedRound = roundId; setTimeout(function () {if (completedRound !== roundId) {return;} level++; startLevel();}, 1500);} } else {document.getElementById("message").textContent = "Not a Match! Try Again."; const currentRound = roundId; setTimeout(function () {if (currentRound !== roundId || gameOver) {return;} first.element.textContent = "❓"; second.element.textContent = "❓"; first.element.classList.remove("open"); second.element.classList.remove("open"); first.element.setAttribute("aria-label", "Hidden picture"); second.element.setAttribute("aria-label", "Hidden picture"); selected = []; locked = false; document.getElementById("message").textContent = "Try another pair!";}, 800);} } function endGame() {clearInterval(timerId); gameOver = true; locked = true; document.getElementById("message").textContent = "⏰ Time Up! Your score is " + score + "."; const game = document.getElementById("game"); game.querySelectorAll(".card").forEach(card => {card.disabled = true;}); const message = document.getElementById("message"); const retryButton = document.createElement("button"); retryButton.className = "action"; retryButton.textContent = "Try Again"; retryButton.onclick = restartGame; message.appendChild(document.createElement("br")); message.appendChild(retryButton);} function restartGame() {clearInterval(timerId); level = 1; score = 0; startLevel();} function backToHome() {clearInterval(timerId); roundId++; document.getElementById("gameScreen").classList.add("hidden"); document.getElementById("startScreen").classList.remove("hidden");} </script>
+</body>
+
+</html>
